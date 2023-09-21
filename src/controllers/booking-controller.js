@@ -1,51 +1,20 @@
+const axios = require('axios');
+
 const { StatusCodes } = require('http-status-codes');
 
 const { BookingService } = require('../services/index');
-
-const { createChannel, publishMessage } = require("../utils/messageQueue");
-
-const { REMINDER_BINDING_KEY } = require("../config/serverConfig");
+const { formattedDate } = require("../utils/time_helper");
 
 const bookingService = new BookingService();
 
 class BookingController {
-    constructor() {
+constructor() {
         
-    }
-  
-    async sendMessageToQueue(req, res) {
-      const channel = await createChannel();
-      const payload = { 
-        data : {
-          subject : 'This is a notification from Queue',
-          content : 'Some queue will subscribe this',
-          recepientEmail : 'pprakhar507@gmail.com',
-          notificationTime : '2023-09-20 03:08:3'
-  
-        },
-        service : 'CREATE_TICKET'
-  
-     };
-      publishMessage(channel, REMINDER_BINDING_KEY, JSON.stringify(payload));
-      return res.status(StatusCodes.OK).json({
-        message: 'Successfully completed booking',
-        success: true,
-        err: {},
-        data: payload
-    })
-    } catch (error) {
-        return res.status(error.statusCode).json({
-            message: error.message,
-            success: false,
-            err: error.explanation,
-            data: {}
-      });
     }
 
 async create (req, res) {
     try {
         const response = await bookingService.createBooking(req.body);
-        //console.log("FROM BOOKING CONTROLLER", response);
         return res.status(StatusCodes.OK).json({
             message: 'Successfully completed booking',
             success: true,
@@ -61,5 +30,49 @@ async create (req, res) {
         });
     }
 }
+async publish(req, res) {
+    try {
+        // Create the email message
+        const emailMessage = {
+            subject: 'Booking Confirmation',
+            content: `Dear User, 
+                We are delighted to confirm your recent booking with AeroJet Express. Your reservation has been successfully processed.
+                Safe travels!
+                Best regards,`,
+            recepientEmail: 'ayush2992@gmail.com',
+            notificationTime: formattedDate,
+        };
+
+        // Call the sendMessageToQueue method with the email message
+        const response = await bookingService.sendMessageToQueue(emailMessage);
+
+        if (response.success) {
+            return res.status(StatusCodes.OK).json({
+                message: 'Successfully completed sending emails',
+                success: true,
+                err: {},
+                data: response.data,
+            });
+        } else {
+            // Handle the case where sending the email failed
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                message: 'Failed to send emails',
+                success: false,
+                err: 'Email sending failed',
+                data: {},
+            });
+        }
+    } catch (error) {
+        // Handle unexpected errors
+        console.error('Error:', error);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: 'Internal server error',
+            success: false,
+            err: 'Internal server error',
+            data: {},
+        });
+    }
+}
+
 }
 module.exports = BookingController;
