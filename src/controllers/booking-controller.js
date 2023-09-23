@@ -30,15 +30,31 @@ async create (req, res) {
         });
     }
 }
+async cancel (req, res) {
+    try {
+        console.log(req.body);
+        const response = await bookingService.cancelBooking(req.body);
+        return res.status(StatusCodes.OK).json({
+            message: 'Successfully cancelled booking',
+            success: true,
+            err: {},
+            data: response
+        })
+    } catch (error) {
+        return res.status(error.statusCode).json({
+            message: error.message,
+            success: false,
+            err: error.explanation,
+            data: {}
+        });
+    }
+}
 async publish(req, res) {
     try {
         // Create the email message
         const emailMessage = {
             subject: 'Booking Confirmation',
-            content: `Dear User, 
-                We are delighted to confirm your recent booking with AeroJet Express. Your reservation has been successfully processed.
-                Safe travels!
-                Best regards,`,
+            content: 'Successful',
             recepientEmail: 'ayush2992@gmail.com',
             notificationTime: formattedDate,
         };

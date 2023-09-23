@@ -7,5 +7,5 @@ const router = express.Router();
 
 router.post('/bookings', bookingController.create);
 router.post('/publish',bookingController.publish);
-
+router.post('/cancel',bookingController.cancel);
 module.exports = router;
